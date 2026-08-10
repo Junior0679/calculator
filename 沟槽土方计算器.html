@@ -1,0 +1,976 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>沟槽土方计算器 - Quicker</title>
+    <style>
+        /* ========== CSS 自定义属性（主题变量） ========== */
+        :root {
+            --bg-primary: #ffffff;
+            --bg-secondary: #f8fafc;
+            --bg-input: #ffffff;
+            --bg-input-readonly: #f1f5f9;
+            --text-primary: #1e293b;
+            --text-secondary: #64748b;
+            --text-heading: #0f172a;
+            --border-color: #e2e8f0;
+            --border-focus: #3b82f6;
+            --accent-color: #2563eb;
+            --accent-hover: #1d4ed8;
+            --accent-light: #eff6ff;
+            --result-bg: #f0f9ff;
+            --result-border: #bae6fd;
+            --result-text: #0369a1;
+            --result-highlight: #0284c7;
+            --formula-bg: #fffbeb;
+            --formula-text: #92400e;
+            --formula-border: #fde68a;
+            --error-color: #dc2626;
+            --error-bg: #fef2f2;
+            --error-border: #fecaca;
+            --success-color: #16a34a;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+            --radius: 8px;
+            --radius-lg: 12px;
+            --transition: 0.2s ease;
+        }
+
+        [data-theme="dark"] {
+            --bg-primary: #1a1a2e;
+            --bg-secondary: #222240;
+            --bg-input: #2a2a45;
+            --bg-input-readonly: #252540;
+            --text-primary: #e2e8f0;
+            --text-secondary: #94a3b8;
+            --text-heading: #f1f5f9;
+            --border-color: #3a3a55;
+            --border-focus: #60a5fa;
+            --accent-color: #3b82f6;
+            --accent-hover: #60a5fa;
+            --accent-light: #1e3a5f;
+            --result-bg: #0f2744;
+            --result-border: #1e4a6e;
+            --result-text: #93c5fd;
+            --result-highlight: #60a5fa;
+            --formula-bg: #2d2410;
+            --formula-text: #fbbf24;
+            --formula-border: #5c4a1f;
+            --error-color: #f87171;
+            --error-bg: #3b1010;
+            --error-border: #7f1d1d;
+            --success-color: #4ade80;
+            --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+            --shadow: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
+            --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.4), 0 2px 4px rgba(0, 0, 0, 0.3);
+        }
+
+        /* ========== 全局重置与基础样式 ========== */
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            font-size: 15px;
+            -webkit-text-size-adjust: 100%;
+        }
+
+        body {
+            font-family: -apple-system, "Microsoft YaHei", "PingFang SC", "Helvetica Neue", sans-serif;
+            background-color: var(--bg-secondary);
+            color: var(--text-primary);
+            line-height: 1.6;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            padding: 20px 16px;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+
+        /* ========== 主容器 ========== */
+        .calculator-container {
+            width: 100%;
+            max-width: 520px;
+            background-color: var(--bg-primary);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-md);
+            padding: 28px 24px 24px;
+            transition: background-color 0.3s ease, box-shadow 0.3s ease;
+            border: 1px solid var(--border-color);
+        }
+
+        /* ========== 标题区域 ========== */
+        .header {
+            text-align: center;
+            margin-bottom: 22px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border-color);
+            transition: border-color 0.3s ease;
+        }
+
+        .header-icon {
+            font-size: 2.4rem;
+            display: block;
+            margin-bottom: 4px;
+            line-height: 1;
+        }
+
+        .header h1 {
+            font-size: 1.35rem;
+            font-weight: 700;
+            color: var(--text-heading);
+            letter-spacing: 0.02em;
+            transition: color 0.3s ease;
+        }
+
+        .header .subtitle {
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            margin-top: 4px;
+            transition: color 0.3s ease;
+        }
+
+        /* ========== 输入区域卡片 ========== */
+        .input-section {
+            background-color: var(--bg-secondary);
+            border-radius: var(--radius);
+            padding: 20px 18px;
+            margin-bottom: 16px;
+            border: 1px solid var(--border-color);
+            transition: background-color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .section-label {
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+            transition: color 0.3s ease;
+        }
+
+        /* ========== 双列网格容器 ========== */
+        .input-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 0 16px;
+        }
+
+        .input-grid .input-row {
+            gap: 8px;
+        }
+
+        .input-grid .input-row label {
+            min-width: 72px;
+            font-size: 0.85rem;
+        }
+
+        .input-grid .input-hint {
+            grid-column: 1 / -1;
+            margin-left: 0;
+            margin-top: -6px;
+            margin-bottom: 8px;
+            font-size: 0.68rem;
+            color: var(--text-secondary);
+            opacity: 0.7;
+            transition: color 0.3s ease;
+        }
+
+        /* ========== 输入行 ========== */
+        .input-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .input-row:last-child {
+            margin-bottom: 0;
+        }
+
+        .input-row label {
+            flex: 0 0 auto;
+            min-width: 82px;
+            font-weight: 600;
+            font-size: 0.9rem;
+            color: var(--text-primary);
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+
+        .input-row .input-wrapper {
+            flex: 1 1 0;
+            min-width: 110px;
+            position: relative;
+        }
+
+        .input-row input {
+            width: 100%;
+            padding: 10px 12px;
+            font-size: 0.95rem;
+            font-family: inherit;
+            color: var(--text-primary);
+            background-color: var(--bg-input);
+            border: 1.5px solid var(--border-color);
+            border-radius: 6px;
+            outline: none;
+            transition: all var(--transition);
+            letter-spacing: 0.01em;
+        }
+
+        .input-row input:focus {
+            border-color: var(--border-focus);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
+        }
+
+        .input-row input.input-error {
+            border-color: var(--error-color);
+            background-color: var(--error-bg);
+        }
+
+        .input-row input.input-error:focus {
+            box-shadow: 0 0 0 3px rgba(220, 38, 38, 0.1);
+        }
+
+        .input-row input::placeholder {
+            color: var(--text-secondary);
+            opacity: 0.5;
+            font-size: 0.83rem;
+        }
+
+        .input-row .unit {
+            flex: 0 0 auto;
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: var(--text-secondary);
+            min-width: 28px;
+            text-align: center;
+            transition: color 0.3s ease;
+        }
+
+        .input-hint {
+            font-size: 0.7rem;
+            color: var(--text-secondary);
+            margin-left: 92px;
+            margin-top: -8px;
+            margin-bottom: 10px;
+            opacity: 0.7;
+            transition: color 0.3s ease;
+        }
+
+        /* ========== 中间结果行：沟槽顶宽 B ========== */
+        .derived-result {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 12px 14px;
+            background-color: var(--formula-bg);
+            border: 1px solid var(--formula-border);
+            border-radius: 7px;
+            margin-bottom: 16px;
+            font-size: 0.9rem;
+            flex-wrap: wrap;
+            transition: background-color 0.3s ease, border-color 0.3s ease, transform 0.15s ease;
+        }
+
+        .derived-result .derived-icon {
+            font-size: 1.3rem;
+            flex: 0 0 auto;
+        }
+
+        .derived-result .derived-label {
+            font-weight: 600;
+            color: var(--formula-text);
+            white-space: nowrap;
+            transition: color 0.3s ease;
+        }
+
+        .derived-result .derived-value {
+            font-weight: 700;
+            color: var(--formula-text);
+            font-size: 1.05rem;
+            letter-spacing: 0.02em;
+            transition: color 0.3s ease;
+        }
+
+        .derived-result .derived-formula {
+            font-size: 0.73rem;
+            color: var(--text-secondary);
+            margin-left: auto;
+            font-style: italic;
+            transition: color 0.3s ease;
+            white-space: nowrap;
+        }
+
+        /* ========== 计算按钮 ========== */
+        .btn-calculate {
+            display: block;
+            width: 100%;
+            padding: 12px 20px;
+            font-size: 1rem;
+            font-weight: 700;
+            font-family: inherit;
+            color: #ffffff;
+            background-color: var(--accent-color);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            letter-spacing: 0.03em;
+            transition: all var(--transition);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: 16px;
+        }
+
+        .btn-calculate:hover {
+            background-color: var(--accent-hover);
+            box-shadow: var(--shadow);
+            transform: translateY(-1px);
+        }
+
+        .btn-calculate:active {
+            background-color: var(--accent-hover);
+            box-shadow: var(--shadow-sm);
+            transform: translateY(0);
+            opacity: 0.9;
+        }
+
+        .btn-calculate:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        /* ========== 结果区域 ========== */
+        .result-section {
+            background-color: var(--result-bg);
+            border: 1.5px solid var(--result-border);
+            border-radius: var(--radius);
+            padding: 18px 16px;
+            text-align: center;
+            transition: all 0.3s ease;
+            min-height: 60px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .result-section.empty {
+            background-color: var(--bg-secondary);
+            border-color: var(--border-color);
+            border-style: dashed;
+        }
+
+        .result-label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: var(--result-text);
+            margin-bottom: 4px;
+            transition: color 0.3s ease;
+        }
+
+        .result-value {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--result-highlight);
+            letter-spacing: 0.02em;
+            line-height: 1.2;
+            transition: color 0.3s ease;
+        }
+
+        .result-value .unit-suffix {
+            font-size: 1rem;
+            font-weight: 600;
+            opacity: 0.8;
+            margin-left: 2px;
+        }
+
+        .result-formula-detail {
+            font-size: 0.78rem;
+            color: var(--result-text);
+            margin-top: 8px;
+            padding-top: 8px;
+            border-top: 1px dashed var(--result-border);
+            line-height: 1.6;
+            word-break: break-all;
+            transition: color 0.3s ease, border-color 0.3s ease;
+        }
+
+        .result-placeholder {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            opacity: 0.6;
+            transition: color 0.3s ease;
+        }
+
+        /* ========== 错误提示 ========== */
+        .error-toast {
+            background-color: var(--error-bg);
+            border: 1px solid var(--error-border);
+            color: var(--error-color);
+            padding: 8px 14px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            font-weight: 500;
+            margin-bottom: 12px;
+            text-align: center;
+            display: none;
+            transition: all 0.3s ease;
+        }
+
+        .error-toast.visible {
+            display: block;
+            animation: fadeInShake 0.35s ease;
+        }
+
+        @keyframes fadeInShake {
+            0% {
+                opacity: 0;
+                transform: translateX(-4px);
+            }
+            25% {
+                transform: translateX(4px);
+            }
+            50% {
+                transform: translateX(-3px);
+            }
+            75% {
+                transform: translateX(2px);
+            }
+            100% {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        /* ========== 响应式微调 ========== */
+        @media (max-width: 420px) {
+            .calculator-container {
+                padding: 16px 12px 14px;
+            }
+
+            .input-grid {
+                grid-template-columns: 1fr;
+                gap: 0;
+            }
+
+            .input-grid .input-row label {
+                min-width: 68px;
+                font-size: 0.8rem;
+            }
+
+            .input-grid .input-row {
+                gap: 10px;
+            }
+
+            .input-grid .input-hint {
+                margin-left: 78px;
+                margin-top: -8px;
+                margin-bottom: 10px;
+                font-size: 0.7rem;
+            }
+
+            .input-row label {
+                min-width: 68px;
+                font-size: 0.8rem;
+            }
+
+            .input-row input {
+                padding: 9px 10px;
+                font-size: 0.86rem;
+            }
+
+            .result-value {
+                font-size: 1.5rem;
+            }
+
+            .derived-result .derived-formula {
+                margin-left: 0;
+                width: 100%;
+                margin-top: 2px;
+            }
+
+            .input-hint {
+                margin-left: 78px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="calculator-container">
+        <!-- 标题 -->
+        <div class="header">
+            <h1>沟槽土方计算器</h1>
+        </div>
+
+        <!-- 错误提示 -->
+        <div class="error-toast" id="errorToast"></div>
+
+        <!-- 参数输入区 -->
+        <div class="input-section">
+            <div class="section-label">📋 参数输入（支持四则运算表达式，如 1.5+0.3*2）</div>
+
+            <!-- 双列网格容器 -->
+            <div class="input-grid">
+                <!-- 沟槽底宽 b -->
+                <div class="input-row">
+                    <label for="inputB">沟槽底宽 b</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="inputB" placeholder="例：2.5" autocomplete="off">
+                    </div>
+                    <span class="unit">m</span>
+                </div>
+
+                <!-- 放坡系数 n -->
+                <div class="input-row">
+                    <label for="inputN">放坡系数 n</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="inputN" placeholder="例：0.5" autocomplete="off">
+                    </div>
+                    <span class="unit">—</span>
+                </div>
+
+                <!-- 沟槽深度 h -->
+                <div class="input-row">
+                    <label for="inputH">沟槽深度 h</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="inputH" placeholder="例：3" autocomplete="off">
+                    </div>
+                    <span class="unit">m</span>
+                </div>
+
+                <!-- 沟槽长度 L -->
+                <div class="input-row">
+                    <label for="inputL">沟槽长度 L</label>
+                    <div class="input-wrapper">
+                        <input type="text" id="inputL" placeholder="例：50" autocomplete="off">
+                    </div>
+                    <span class="unit">m</span>
+                </div>
+
+                <!-- 提示信息（横跨两列） -->
+                <p class="input-hint">💡 放坡系数：每下挖 1m 深度，单侧边坡向外延伸 n 米</p>
+            </div>
+        </div>
+
+        <!-- 中间结果：沟槽顶宽 B -->
+        <div class="derived-result" id="derivedB">
+            <span class="derived-icon">📏</span>
+            <span class="derived-label">沟槽顶宽 B = b + 2×n×h</span>
+            <span class="derived-value" id="bValue">—</span>
+            <span class="derived-formula" id="bFormula"></span>
+        </div>
+
+        <!-- 计算按钮 -->
+        <button class="btn-calculate" id="btnCalculate" type="button">⚡ 计算土方体积</button>
+
+        <!-- 结果区域 -->
+        <div class="result-section empty" id="resultSection">
+            <span class="result-placeholder">👆 输入全部参数后自动计算或点击上方按钮</span>
+        </div>
+    </div>
+
+    <script>
+        /* ========================================================================
+         * 主题模式适配 - 三级降级策略
+         * 优先级1: window.quickerThemeMode（Quicker 通过 JS 脚本参数注入）
+         * 优先级2: $quickerSync.getVar("quickerThemeMode")（Quicker 桥接对象）
+         * 优先级3: window.matchMedia('(prefers-color-scheme: dark)')（系统偏好降级）
+         * ======================================================================== */
+        function applyTheme() {
+            var themeMode = null;
+
+            // 优先级1：检查 Quicker 注入的全局变量
+            if (typeof window.quickerThemeMode !== 'undefined' && window.quickerThemeMode) {
+                themeMode = window.quickerThemeMode;
+            }
+            // 优先级2：通过桥接对象读取
+            else if (typeof $quickerSync !== 'undefined' && $quickerSync.getVar) {
+                try {
+                    themeMode = $quickerSync.getVar("quickerThemeMode");
+                } catch (e) {
+                    themeMode = null;
+                }
+            }
+
+            // 判断是否为深色模式
+            var isDark = false;
+            if (themeMode === 'dark' || themeMode === 'auto_dark') {
+                isDark = true;
+            } else if (themeMode === 'light' || themeMode === 'auto_light') {
+                isDark = false;
+            } else {
+                // 优先级3：降级到系统偏好
+                if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                    isDark = true;
+                }
+            }
+
+            if (isDark) {
+                document.documentElement.setAttribute('data-theme', 'dark');
+            } else {
+                document.documentElement.removeAttribute('data-theme');
+            }
+        }
+
+        // 页面加载时立即应用主题
+        applyTheme();
+
+        // 监听系统主题变化（当使用系统偏好降级时，动态响应）
+        if (window.matchMedia) {
+            var darkModeQuery = window.matchMedia('(prefers-color-scheme: dark)');
+            if (darkModeQuery.addEventListener) {
+                darkModeQuery.addEventListener('change', function() {
+                    var hasQuickerTheme = (typeof window.quickerThemeMode !== 'undefined' && window
+                        .quickerThemeMode) ||
+                        (typeof $quickerSync !== 'undefined' && $quickerSync.getVar);
+                    if (!hasQuickerTheme) {
+                        applyTheme();
+                    }
+                });
+            }
+        }
+
+        /* ========================================================================
+         * 计算逻辑
+         *
+         * 沟槽截面为等腰梯形（放坡两侧对称），其几何特征：
+         *
+         *   顶部宽度 B = b + 2×n×h
+         *     ┌─────────────────────┐  ← 沟槽顶宽 B
+         *     │    ╱           ╲    │
+         *     │   ╱             ╲   │  ← 边坡（放坡系数 n）
+         *     │  ╱               ╲  │
+         *     └─────────────────────┘  ← 沟槽底宽 b
+         *         深度 h
+         *
+         * 梯形截面积 A = (b + B) × h / 2
+         *               = (b + b + 2×n×h) × h / 2
+         *               = (2b + 2×n×h) × h / 2
+         *               = (b + n×h) × h
+         *
+         * 土方体积 V = A × L = (b + n×h) × h × L
+         *
+         * 公式来源：建筑基坑支护技术规程中梯形截面沟槽体积标准公式
+         *
+         * 退化情况：
+         *   - n=0 时，B=b，退化为矩形截面，V = b×h×L
+         *   - b=0 且 n>0 时，截面为倒三角形，V = n×h²×L
+         * ======================================================================== */
+
+        // DOM 元素引用
+        var inputB = document.getElementById('inputB');
+        var inputN = document.getElementById('inputN');
+        var inputH = document.getElementById('inputH');
+        var inputL = document.getElementById('inputL');
+        var btnCalculate = document.getElementById('btnCalculate');
+        var errorToast = document.getElementById('errorToast');
+        var resultSection = document.getElementById('resultSection');
+        var derivedB = document.getElementById('derivedB');
+        var bValueEl = document.getElementById('bValue');
+        var bFormulaEl = document.getElementById('bFormula');
+
+        // 错误toast定时器
+        var toastTimer = null;
+
+        /**
+         * 安全表达式求值
+         * 支持 + - * / 四则运算、括号、小数点
+         * @param {string} expr - 用户输入的表达式字符串
+         * @returns {number|null} - 求值结果，解析失败返回 null
+         */
+        function evaluateExpression(expr) {
+            if (typeof expr !== 'string') return null;
+            var trimmed = expr.replace(/\s+/g, '');
+            if (trimmed === '') return null;
+
+            // 安全检查：只允许数字、运算符、括号、小数点
+            var safePattern = /^[\d+\-*/().]+$/;
+            if (!safePattern.test(trimmed)) return null;
+
+            // 检查是否以运算符结尾或开头（排除负号开头）
+            if (/[+\-*/]$/.test(trimmed)) return null;
+            if (/^[+*/]/.test(trimmed)) return null;
+
+            // 检查括号匹配
+            var parenDepth = 0;
+            for (var i = 0; i < trimmed.length; i++) {
+                if (trimmed[i] === '(') parenDepth++;
+                if (trimmed[i] === ')') parenDepth--;
+                if (parenDepth < 0) return null;
+            }
+            if (parenDepth !== 0) return null;
+
+            // 防止连续运算符（允许负号相关组合如 *- 或 (- ）
+            var cleaned = trimmed.replace(/--/g, '+').replace(/\+-/g, '-').replace(/-\+/g, '-');
+            if (/[+\-*/]{2,}/.test(cleaned.replace(/\*\*/g, '^'))) return null;
+
+            try {
+                var result = new Function('return ' + trimmed)();
+                if (typeof result !== 'number' || !isFinite(result)) return null;
+                return result;
+            } catch (e) {
+                return null;
+            }
+        }
+
+        /**
+         * 获取输入框的数值
+         * @param {HTMLInputElement} inputEl - 输入框元素
+         * @returns {{value: number|null, raw: string}}
+         */
+        function getInputValue(inputEl) {
+            var raw = inputEl.value.trim();
+            if (raw === '') return { value: null, raw: raw };
+            var val = evaluateExpression(raw);
+            return { value: val, raw: raw };
+        }
+
+        /**
+         * 显示错误提示
+         * @param {string} msg - 错误消息
+         */
+        function showError(msg) {
+            errorToast.textContent = '⚠️ ' + msg;
+            errorToast.classList.add('visible');
+            clearTimeout(toastTimer);
+            toastTimer = setTimeout(function() {
+                errorToast.classList.remove('visible');
+            }, 3500);
+        }
+
+        function hideError() {
+            errorToast.classList.remove('visible');
+            clearTimeout(toastTimer);
+        }
+
+        /**
+         * 标记输入框错误状态
+         * @param {HTMLInputElement} inputEl
+         * @param {boolean} isError
+         */
+        function setInputError(inputEl, isError) {
+            if (isError) {
+                inputEl.classList.add('input-error');
+            } else {
+                inputEl.classList.remove('input-error');
+            }
+        }
+
+        /**
+         * 格式化数值显示
+         * @param {number} val - 数值
+         * @param {number} decimals - 小数位数
+         * @returns {string}
+         */
+        function formatNumber(val, decimals) {
+            if (val === null || val === undefined || !isFinite(val)) return '—';
+            return val.toFixed(decimals);
+        }
+
+        /**
+         * 执行沟槽土方计算
+         * @param {boolean} showToast - 是否在参数错误时显示 toast（按钮点击时为true）
+         */
+        function calculate(showToast) {
+            if (showToast === undefined) showToast = false;
+
+            // 获取输入值
+            var bResult = getInputValue(inputB);
+            var nResult = getInputValue(inputN);
+            var hResult = getInputValue(inputH);
+            var lResult = getInputValue(inputL);
+
+            // 清除之前的错误状态
+            setInputError(inputB, false);
+            setInputError(inputN, false);
+            setInputError(inputH, false);
+            setInputError(inputL, false);
+
+            if (!showToast) {
+                hideError();
+            }
+
+            var hasError = false;
+            var firstErrorMessage = '';
+
+            // 校验沟槽底宽 b
+            if (bResult.value === null || bResult.raw === '') {
+                setInputError(inputB, true);
+                if (!hasError) firstErrorMessage = '请输入有效的沟槽底宽 b（支持表达式，如 2.5 或 1.5+0.3*2）';
+                hasError = true;
+            } else if (bResult.value < 0) {
+                setInputError(inputB, true);
+                if (!hasError) firstErrorMessage = '沟槽底宽 b 不能为负数';
+                hasError = true;
+            }
+
+            // 校验放坡系数 n
+            if (nResult.value === null || nResult.raw === '') {
+                setInputError(inputN, true);
+                if (!hasError) firstErrorMessage = '请输入有效的放坡系数 n（支持表达式，如 0.5 或 1/2）';
+                hasError = true;
+            } else if (nResult.value < 0) {
+                setInputError(inputN, true);
+                if (!hasError) firstErrorMessage = '放坡系数 n 不能为负数（如需内收请确认工程合理性）';
+                hasError = true;
+            }
+
+            // 校验沟槽深度 h
+            if (hResult.value === null || hResult.raw === '') {
+                setInputError(inputH, true);
+                if (!hasError) firstErrorMessage = '请输入有效的沟槽深度 h（支持表达式）';
+                hasError = true;
+            } else if (hResult.value <= 0) {
+                setInputError(inputH, true);
+                if (!hasError) firstErrorMessage = '沟槽深度 h 必须大于 0';
+                hasError = true;
+            }
+
+            // 校验沟槽长度 L
+            if (lResult.value === null || lResult.raw === '') {
+                setInputError(inputL, true);
+                if (!hasError) firstErrorMessage = '请输入有效的沟槽长度 L（支持表达式）';
+                hasError = true;
+            } else if (lResult.value <= 0) {
+                setInputError(inputL, true);
+                if (!hasError) firstErrorMessage = '沟槽长度 L 必须大于 0';
+                hasError = true;
+            }
+
+            // 如果有错误
+            if (hasError) {
+                // 更新顶宽B显示为无效状态
+                bValueEl.textContent = '—';
+                bFormulaEl.textContent = '';
+                updateResultSection(null, null, null, null, null, null);
+
+                if (showToast && firstErrorMessage) {
+                    showError(firstErrorMessage);
+                }
+                return;
+            }
+
+            // 所有参数有效，进行计算
+            var b = bResult.value;
+            var n = nResult.value;
+            var h = hResult.value;
+            var L = lResult.value;
+
+            // 计算沟槽顶宽 B = b + 2 × n × h
+            var topWidth = b + 2 * n * h;
+
+            // 更新顶宽B显示
+            bValueEl.textContent = formatNumber(topWidth, 3) + ' m';
+            bFormulaEl.textContent = '= ' + formatNumber(b, 3) + ' + 2 × ' + formatNumber(n, 3) + ' × ' +
+                formatNumber(h, 3) + ' = ' + formatNumber(topWidth, 3) + ' m';
+
+            // 高亮顶宽显示（短暂动画反馈）
+            derivedB.style.transform = 'scale(1.02)';
+            setTimeout(function() {
+                derivedB.style.transform = 'scale(1)';
+            }, 150);
+
+            // 计算体积 V = (b + n × h) × h × L
+            var areaBase = b + n * h; // 等效宽度
+            var crossArea = areaBase * h; // 截面积
+            var volume = crossArea * L;
+
+            // 更新结果区域
+            updateResultSection(volume, b, n, h, L, topWidth, crossArea, areaBase);
+        }
+
+        /**
+         * 更新结果展示区域
+         * @param {number|null} volume - 体积
+         * @param {number|null} b - 底宽
+         * @param {number|null} n - 放坡系数
+         * @param {number|null} h - 深度
+         * @param {number|null} L - 长度
+         * @param {number|null} topWidth - 顶宽
+         * @param {number|null} crossArea - 截面积
+         * @param {number|null} areaBase - 等效宽度 (b+n*h)
+         */
+        function updateResultSection(volume, b, n, h, L, topWidth, crossArea, areaBase) {
+            if (volume === null || !isFinite(volume)) {
+                resultSection.classList.add('empty');
+                resultSection.innerHTML =
+                    '<span class="result-placeholder">👆 输入全部参数后自动计算或点击上方按钮</span>';
+                return;
+            }
+
+            resultSection.classList.remove('empty');
+
+            var volFormatted = formatNumber(volume, 2);
+
+            var formulaDetail = '';
+            if (b !== null && n !== null && h !== null && L !== null && topWidth !== null && crossArea !==
+                null && areaBase !== null) {
+                formulaDetail =
+                    '<strong>沟槽顶宽</strong> B = b + 2×n×h = ' + formatNumber(b, 3) + ' + 2×' + formatNumber(n,
+                        3) + '×' + formatNumber(h, 3) + ' = <strong>' + formatNumber(topWidth, 3) + ' m</strong>' +
+                    '<br><strong>截面积</strong> A = (b + n×h) × h = (' + formatNumber(b, 3) + ' + ' + formatNumber(
+                        n, 3) + '×' + formatNumber(h, 3) + ') × ' + formatNumber(h, 3) + ' = ' + formatNumber(
+                        crossArea, 3) + ' m²' +
+                    '<br><strong>土方体积</strong> V = A × L = ' + formatNumber(crossArea, 3) + ' × ' + formatNumber(
+                        L, 3) + ' ≈ <strong>' + volFormatted + ' m³</strong>';
+            }
+
+            resultSection.innerHTML =
+                '<div class="result-label">📦 沟槽土方体积</div>' +
+                '<div class="result-value">' + volFormatted + '<span class="unit-suffix"> m³</span></div>' +
+                '<div class="result-formula-detail">' + formulaDetail + '</div>';
+        }
+
+        // ========== 事件绑定 ==========
+
+        // 输入时自动计算（静默模式，不弹toast）
+        inputB.addEventListener('input', function() {
+            calculate(false);
+        });
+        inputN.addEventListener('input', function() {
+            calculate(false);
+        });
+        inputH.addEventListener('input', function() {
+            calculate(false);
+        });
+        inputL.addEventListener('input', function() {
+            calculate(false);
+        });
+
+        // 点击计算按钮（显示toast）
+        btnCalculate.addEventListener('click', function() {
+            calculate(true);
+        });
+
+        // 键盘事件：回车触发计算（显示toast）
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter') {
+                e.preventDefault();
+                calculate(true);
+            }
+        });
+
+        // ========== 初始状态 ==========
+        updateResultSection(null, null, null, null, null, null);
+        bValueEl.textContent = '—';
+        bFormulaEl.textContent = '';
+        derivedB.style.transition = 'transform 0.15s ease';
+
+        // 聚焦第一个输入框
+        inputB.focus();
+    </script>
+</body>
+</html>
